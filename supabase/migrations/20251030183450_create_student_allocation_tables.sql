@@ -19,7 +19,7 @@
   - `id` (uuid, primary key) - Unique identifier for each student
   - `name` (text, not null) - Student's full name
   - `student_id` (text, unique, not null) - Student identification number
-  - `email` (text, nullable) - Optional email address
+  - `section` (text, nullable) - Optional section (A, B, or C)
   - `created_at` (timestamptz) - Timestamp when student was added
   - `updated_at` (timestamptz) - Timestamp when student was last updated
 
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS students (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   student_id text UNIQUE NOT NULL,
-  email text,
+  section text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

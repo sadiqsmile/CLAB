@@ -11,7 +11,7 @@ interface AddStudentModalProps {
 export default function AddStudentModal({ computerId, onClose, onSuccess }: AddStudentModalProps) {
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [email, setEmail] = useState('');
+  const [section, setSection] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,13 +28,18 @@ export default function AddStudentModal({ computerId, onClose, onSuccess }: AddS
       return;
     }
 
+    if (!section) {
+      setError('Please select a section');
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError(null);
       const student = await studentService.create(
         name.trim(),
         studentId.trim(),
-        email.trim() || undefined
+        section || undefined
       );
       if (computerId) {
         await allocationService.create(student.id, computerId);
@@ -98,18 +103,42 @@ export default function AddStudentModal({ computerId, onClose, onSuccess }: AddS
           </div>
 
           <div className="mb-6">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email (optional)
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g., john.doe@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={submitting}
-            />
+            <div className="block text-sm font-medium text-gray-700 mb-2">Section *</div>
+            <div className="flex items-center gap-6">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="section"
+                  value="A"
+                  checked={section === 'A'}
+                  onChange={() => setSection('A')}
+                  disabled={submitting}
+                />
+                <span className="text-sm text-gray-700">A</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="section"
+                  value="B"
+                  checked={section === 'B'}
+                  onChange={() => setSection('B')}
+                  disabled={submitting}
+                />
+                <span className="text-sm text-gray-700">B</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="section"
+                  value="C"
+                  checked={section === 'C'}
+                  onChange={() => setSection('C')}
+                  disabled={submitting}
+                />
+                <span className="text-sm text-gray-700">C</span>
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-3">

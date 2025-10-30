@@ -3,25 +3,27 @@ import type { Computer, Student, Allocation, ComputerWithCount, StudentWithCompu
 
 export const computerService = {
   async getAll(): Promise<ComputerWithCount[]> {
-    const { data: computers, error: computersError } = await supabase
+    const { data: computers, error: computersError } = await (supabase
       .from('computers')
       .select('*')
-      .order('name');
+      .order('name') as unknown) as { data: Computer[] | null; error: any };
 
     if (computersError) throw computersError;
 
-    const { data: allocations, error: allocationsError } = await supabase
+    const { data: allocations, error: allocationsError } = await (supabase
       .from('allocations')
-      .select('computer_id');
+      .select('computer_id') as unknown) as { data: Array<{ computer_id: string }> | null; error: any };
 
     if (allocationsError) throw allocationsError;
 
-    const countMap = allocations.reduce((acc, alloc) => {
+    const allocationsList = allocations || [];
+    const countMap = allocationsList.reduce((acc, alloc) => {
       acc[alloc.computer_id] = (acc[alloc.computer_id] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    return computers.map(computer => ({
+    const computersList = computers || [];
+    return computersList.map(computer => ({
       ...computer,
       student_count: countMap[computer.id] || 0
     }));
@@ -34,30 +36,31 @@ export const computerService = {
       .eq('id', id)
       .maybeSingle();
 
-    if (error) throw error;
-    return data;
+  if (error) throw error;
+  if (!data) throw new Error('No computer returned');
+  return data;
   },
 
   async create(name: string, location?: string): Promise<Computer> {
-    const { data, error } = await supabase
-      .from('computers')
+    const { data, error } = await ((supabase.from('computers') as unknown as any)
       .insert({ name, location })
       .select()
-      .single();
+      .single() as unknown) as { data: Computer | null; error: any };
 
-    if (error) throw error;
-    return data;
+  if (error) throw error;
+  if (!data) throw new Error('No computer returned');
+  return data;
   },
 
   async update(id: string, name: string, location?: string): Promise<Computer> {
-    const { data, error } = await supabase
-      .from('computers')
+    const { data, error } = await ((supabase.from('computers') as unknown as any)
       .update({ name, location })
       .eq('id', id)
       .select()
-      .single();
+      .single() as unknown) as { data: Computer | null; error: any };
 
     if (error) throw error;
+    if (!data) throw new Error('No computer returned');
     return data;
   },
 
@@ -73,21 +76,22 @@ export const computerService = {
 
 export const studentService = {
   async getAll(): Promise<StudentWithComputer[]> {
-    const { data: students, error: studentsError } = await supabase
+    const { data: students, error: studentsError } = await (supabase
       .from('students')
       .select('*')
-      .order('name');
+      .order('name') as unknown) as { data: Student[] | null; error: any };
 
     if (studentsError) throw studentsError;
 
-    const { data: allocations, error: allocationsError } = await supabase
+    const { data: allocations, error: allocationsError } = await (supabase
       .from('allocations')
       .select('student_id, computer_id, computers(name)')
-      .order('student_id');
+      .order('student_id') as unknown) as { data: Array<any> | null; error: any };
 
     if (allocationsError) throw allocationsError;
 
-    const allocationMap = allocations.reduce((acc, alloc: any) => {
+    const allocationsList = allocations || [];
+    const allocationMap = allocationsList.reduce((acc, alloc: any) => {
       acc[alloc.student_id] = {
         computer_id: alloc.computer_id,
         computer_name: alloc.computers?.name || null
@@ -95,7 +99,8 @@ export const studentService = {
       return acc;
     }, {} as Record<string, { computer_id: string; computer_name: string | null }>);
 
-    return students.map(student => ({
+    const studentsList = students || [];
+    return studentsList.map(student => ({
       ...student,
       computer_id: allocationMap[student.id]?.computer_id || null,
       computer_name: allocationMap[student.id]?.computer_name || null
@@ -114,48 +119,49 @@ export const studentService = {
   },
 
   async getByComputerId(computerId: string): Promise<Student[]> {
-    const { data: allocations, error: allocationsError } = await supabase
+    const { data: allocations, error: allocationsError } = await (supabase
       .from('allocations')
       .select('student_id')
-      .eq('computer_id', computerId);
+      .eq('computer_id', computerId) as unknown) as { data: Array<{ student_id: string }> | null; error: any };
 
     if (allocationsError) throw allocationsError;
 
-    if (!allocations || allocations.length === 0) return [];
+    const allocationsList = allocations || [];
+    if (allocationsList.length === 0) return [];
 
-    const studentIds = allocations.map(a => a.student_id);
+    const studentIds = allocationsList.map(a => a.student_id);
 
-    const { data: students, error: studentsError } = await supabase
+    const { data: students, error: studentsError } = await (supabase
       .from('students')
       .select('*')
       .in('id', studentIds)
-      .order('name');
+      .order('name') as unknown) as { data: Student[] | null; error: any };
 
     if (studentsError) throw studentsError;
-    return students;
+    return students || [];
   },
 
-  async create(name: string, studentId: string, email?: string): Promise<Student> {
-    const { data, error } = await supabase
-      .from('students')
-      .insert({ name, student_id: studentId, email })
+  async create(name: string, studentId: string, section?: string): Promise<Student> {
+    const { data, error } = await (((supabase.from('students') as unknown as any)
+      .insert({ name, student_id: studentId, section })
       .select()
-      .single();
+      .single() as unknown) as { data: Student | null; error: any });
 
-    if (error) throw error;
-    return data;
+  if (error) throw error;
+  if (!data) throw new Error('No student returned');
+  return data;
   },
 
-  async update(id: string, name: string, studentId: string, email?: string): Promise<Student> {
-    const { data, error } = await supabase
-      .from('students')
-      .update({ name, student_id: studentId, email })
+  async update(id: string, name: string, studentId: string, section?: string): Promise<Student> {
+    const { data, error } = await (((supabase.from('students') as unknown as any)
+      .update({ name, student_id: studentId, section })
       .eq('id', id)
       .select()
-      .single();
+      .single() as unknown) as { data: Student | null; error: any });
 
-    if (error) throw error;
-    return data;
+  if (error) throw error;
+  if (!data) throw new Error('No student returned');
+  return data;
   },
 
   async delete(id: string): Promise<void> {
@@ -204,25 +210,25 @@ export const allocationService = {
   async create(studentId: string, computerId: string): Promise<Allocation> {
     await this.deleteByStudentId(studentId);
 
-    const { data, error } = await supabase
-      .from('allocations')
+    const { data, error } = await (((supabase.from('allocations') as unknown as any)
       .insert({ student_id: studentId, computer_id: computerId })
       .select()
-      .single();
+      .single() as unknown) as { data: Allocation | null; error: any });
 
     if (error) throw error;
+    if (!data) throw new Error('No allocation returned');
     return data;
   },
 
   async update(id: string, computerId: string): Promise<Allocation> {
-    const { data, error } = await supabase
-      .from('allocations')
+    const { data, error } = await (((supabase.from('allocations') as unknown as any)
       .update({ computer_id: computerId })
       .eq('id', id)
       .select()
-      .single();
+      .single() as unknown) as { data: Allocation | null; error: any });
 
     if (error) throw error;
+    if (!data) throw new Error('No allocation returned');
     return data;
   },
 

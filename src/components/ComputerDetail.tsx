@@ -17,6 +17,7 @@ export default function ComputerDetail({ computerId, computerName, onBack }: Com
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAllocateModal, setShowAllocateModal] = useState(false);
+  const [selectedSections, setSelectedSections] = useState<Record<string, boolean>>({ A: true, B: true, C: true });
 
   const loadStudents = async () => {
     try {
@@ -76,6 +77,19 @@ export default function ComputerDetail({ computerId, computerName, onBack }: Com
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{computerName}</h1>
             <p className="text-gray-600 mt-2">{students.length} student{students.length !== 1 ? 's' : ''} allocated</p>
+            <div className="mt-3 flex items-center gap-3 text-sm text-gray-700">
+              <div className="font-medium">Filter Sections:</div>
+              {(['A','B','C'] as const).map(s => (
+                <label key={s} className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!!selectedSections[s]}
+                    onChange={() => setSelectedSections(prev => ({ ...prev, [s]: !prev[s] }))}
+                  />
+                  <span>{s}</span>
+                </label>
+              ))}
+            </div>
           </div>
           <div className="flex gap-3">
             <button
@@ -134,7 +148,7 @@ export default function ComputerDetail({ computerId, computerName, onBack }: Com
                   Student ID
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                  Section
                 </th>
                 <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -142,7 +156,12 @@ export default function ComputerDetail({ computerId, computerName, onBack }: Com
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((student) => (
+              {students
+                .filter(student => {
+                  const sec = student.section || '';
+                  return !!selectedSections[sec] || (sec === '' && (selectedSections['A'] || selectedSections['B'] || selectedSections['C']));
+                })
+                .map((student) => (
                 <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{student.name}</div>
@@ -151,7 +170,7 @@ export default function ComputerDetail({ computerId, computerName, onBack }: Com
                     <div className="text-sm text-gray-600">{student.student_id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{student.email || '-'}</div>
+                    <div className="text-sm text-gray-600">{student.section || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <button
